@@ -1,4 +1,4 @@
-.PHONY: test clean update
+.PHONY: test clean update fullclean
 
 test : expected.txt results.txt
 	diff expected.txt results.txt && echo results MATCH
@@ -16,5 +16,11 @@ results.txt : $(PROGRAMS) $(INPUTS)
 clean:
 	$(RM) results.txt
 
+fullclean: clean
+	$(RM) input.txt
+
 update: results.txt
 	cp $< expected.txt
+
+input.txt :
+	aocd $(notdir $(patsubst %/,%,$(dir $(CURDIR)))) $(subst day,,$(notdir $(CURDIR))) > $@

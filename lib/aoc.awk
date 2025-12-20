@@ -25,6 +25,16 @@ function error(e) {
     }
 }
 
+##
+# Some initial defaults
+#
+# Overwrite in the regular program BEGIN handler
+#
+BEGIN {
+    DEBUG = 0
+    DFILE = "/dev/stderr"
+}
+
 #
 # Propagate exit from any error() calls from pattern actions
 #
