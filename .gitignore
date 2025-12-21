@@ -1,4 +1,6 @@
-results.txt
 input.txt
+output.txt
+results.txt
+reference.txt
 .*.sw?
 *.so
