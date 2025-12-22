@@ -5,9 +5,6 @@ BEGIN {
     sum = 0
     DEBUG = 0
 }
-(NF < 1) {
-    aoc::data_error()
-}
 {
     num = $1 $NF
     sum += num

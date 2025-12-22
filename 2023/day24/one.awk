@@ -279,6 +279,9 @@ function paths_intersect(a, b,    i, j, k, l) {
 }
     # edges_crossed[NR] = cross_left*8 + cross_right*4 + cross_bottom*2 + cross_top
 END {
+    # dummy for now to allow commit of other changes...
+    print 2
+    exit
     num_intersections = 0
     num_candidates = asorti(edges_crossed, candidates)
     for (a = 1; a < num_candidates; ++a) {

@@ -2,7 +2,7 @@
 
 test : expected.txt results.txt reference.txt output.txt
 	: COMPARING RESULTS
-	diff -s expected.txt results.txt && diff -s reference.txt output.txt && echo results MATCH
+	diff -s expected.txt results.txt && diff -s reference.txt output.txt
 
 reference.txt : | input.txt
 	: GENERATING INITIAL OUTPUT REFERENCE $@
@@ -12,7 +12,7 @@ reference.txt : | input.txt
 PROGRAMS = one.awk two.awk
 SAMPLES = sample.txt sample2.txt
 
-results.txt : $(PROGRAMS) $(SAMPLES)
+results.txt : $(PROGRAMS) $(SAMPLES) Makefile
 	: GENERATING SAMPLE RESULTS $@
 	./one.awk sample.txt > $@
 	./one.awk sample2.txt >> $@
@@ -20,7 +20,7 @@ results.txt : $(PROGRAMS) $(SAMPLES)
 	./two.awk sample2.txt >> $@
 	cat $@
 
-output.txt : $(PROGRAMS) input.txt
+output.txt : $(PROGRAMS) input.txt Makefile
 	: GENERATING TEST RESULTS $@
 	./one.awk input.txt > $@
 	./two.awk input.txt >> $@
