@@ -166,7 +166,7 @@ END {
         }
     }
     if (DEBUG) {
-        print "SUBGRAPHS:"
+        print "SUBGRAPHS:" > DFILE
         for (g in SUBGRAPHS) {
             printf "%s:", g > DFILE
             for (n in SUBGRAPHS[g]) {
@@ -177,17 +177,17 @@ END {
     }
 
     if (DEBUG) {
-        print "INITIAL STATE:"
+        print "INITIAL STATE:" > DFILE
     }
     for (g in SUBGRAPHS) {
         INITIAL_STATES[g] = state(g)
         if (DEBUG) {
-            print INITIAL_STATES[g]
+            print INITIAL_STATES[g] > DFILE
         }
     }
 
     if (DEBUG) {
-        print "RUNNING EACH SUBGRAPH TO HIGH OUTPUT:"
+        print "RUNNING EACH SUBGRAPH TO HIGH OUTPUT:" > DFILE
     }
     most_input_pulses_needed = 0
     for (g in SUBGRAPHS) {
@@ -272,24 +272,24 @@ END {
             last_state = current_state
         }
         if (DEBUG > 1) {
-            print g, ": after", input_pulses, "input pulses", g, "produced", output_pulses, "output pulses, generating at time:"
+            print g, ": after", input_pulses, "input pulses", g, "produced", output_pulses, "output pulses, generating at time:" > DFILE
             zeros = 0
             for (t in FINAL_WRITES) {
                 if (!zeros) {
-                    print " " t ": zero"
+                    print " " t ": zero" > DFILE
                 }
                 if (FINAL_WRITES[t]) {
                     if (zeros > 1) {
-                        print " then", (zeros - 1), "more zeros"
+                        print " then", (zeros - 1), "more zeros" > DFILE
                     }
-                    print " " t ": one"
+                    print " " t ": one" > DFILE
                     zeros = 0
                 } else {
                     ++zeros
                 }
             }
             if (zeros > 1) {
-                print " then", (zeros - 1), "more zeros"
+                print " then", (zeros - 1), "more zeros" > DFILE
             }
         }
         if (current_state != INITIAL_STATES[g]) {
@@ -302,7 +302,7 @@ END {
     }
     if (DEBUG) {
         for (g in SUBGRAPHS) {
-            print g, "requires", REQUIRED_PRESSES[g], "input pulses to reach HIGH"
+            print g, "requires", REQUIRED_PRESSES[g], "input pulses to reach HIGH" > DFILE
         }
     }
     
