@@ -2,5 +2,5 @@
 @include "../../lib/aoc.awk"
 
 END {
-    print NR
+    print "MERRY CHRISTMAS"
 }
