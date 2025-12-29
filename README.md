@@ -37,7 +37,7 @@ Additionally, running the tests generates:
 Since Eric requested that it not be published, input data is no longer
 included in the repository. The makefiles now import test input using
 the 'aocd' tool (see https://github.com/wimglenn/advent-of-code-data),
-which must be installed and configure with your session key. Reference
+which must be installed and configured with your session key. Reference
 results will be bootstrapped once from the inputs although it is not
 automatically updated (it can be updated with 'make update' or by hand
 as needed). Since input data is personalized, it is possible that any
