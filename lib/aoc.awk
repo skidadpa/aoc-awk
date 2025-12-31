@@ -5,7 +5,7 @@
 @namespace "aoc"
 
 ##
-# @brief Print an error message and exit
+# @brief Print an error message and exit.
 #
 # Prints the provided error message and exits with code 1.
 #
@@ -26,9 +26,9 @@ function error(e) {
 }
 
 ##
-# Some initial defaults
+# @brief Provide some initial defaults.
 #
-# Overwrite in the regular program BEGIN handler
+# Overwrite in the regular program BEGIN handler as needed.
 #
 BEGIN {
     DEBUG = 0
@@ -36,21 +36,21 @@ BEGIN {
 }
 
 #
-# Propagate exit from any error() calls from pattern actions
+# @brief Propagate exit from any error() calls from pattern actions.
 #
-# This should happen before the regular program END handler
+# This will happen before the regular program END handler.
 #
 END {
     error()
 }
 
 ##
-# @brief Print a data error message and exit
+# @brief Print a data error message and exit.
 #
 # Prints the provided error message along with the current line and
 # line number and exits with code 1.
 #
-# @param e Message to print, can be empty
+# @param e Message to print (optional)
 #
 # @Note Intended to be used in a pattern action. Uses NR and $0.
 #
@@ -62,12 +62,12 @@ function data_error(e,   sep) {
 }
 
 ##
-# @brief Print a runtime error message and exit
+# @brief Print a runtime error message and exit.
 #
 # Prints the provided error message, indicating that it is a
 # processing error, and exits with code 1.
 #
-# @param e Message to print, can be empty
+# @param e Message to print (optional)
 #
 function compute_error(e,   sep) {
     if (e != "") {
@@ -77,7 +77,7 @@ function compute_error(e,   sep) {
 }
 
 ##
-# @brief Compute absolute value of a number
+# @brief Compute absolute value of a number.
 #
 # @param x Number to process
 #
@@ -88,7 +88,7 @@ function abs(x) {
 }
 
 ##
-# @brief Find the smallest of two numbers
+# @brief Find the smallest of two numbers.
 #
 # @param a Number to process
 # @param b Number to process
@@ -98,7 +98,7 @@ function abs(x) {
 function min(a, b) { return a < b ? a : b }
 
 ##
-# @brief Find the largest of two numbers
+# @brief Find the largest of two numbers.
 #
 # @param a Number to process
 # @param b Number to process
@@ -108,13 +108,13 @@ function min(a, b) { return a < b ? a : b }
 function max(a, b) { return a > b ? a : b }
 
 ##
-# @brief Dump a matrix into a flat string
+# @brief Dump a matrix into a flat string.
 #
 # @param mat Matrix to convert (2-dimensional, indexed [1,1]-[m,n]
 # @param m number of rows (optional, auto-detected if not specified)
 # @param n number of columns (optional, auto-detected if not specified)
 #
-# @return string of form [[row1 separated by commas][row2...
+# @return string of form [[row1 separated by commas][row2 ...
 #
 function str_mat(mat,   m, n,   i, c, j, str, sep) {
     if (!m) {
@@ -148,7 +148,7 @@ function str_mat(mat,   m, n,   i, c, j, str, sep) {
 }
 
 ##
-# @brief Dump a vector into a flat string
+# @brief Dump a vector into a flat string.
 #
 # @param vec Vector to convert (1-dimensional, indexed [1]-[m]
 # @param m length of vector (optional, auto-detected if not specified)
@@ -170,14 +170,66 @@ function str_vec(vec,   m,   str, sep, i) {
 }
 
 ##
-# @brief Perform Gaussian elimination on a coefficient matrix and result vector
+# @brief Perform Gaussian elimination on a coefficient matrix and result vector.
 #
 # The arrays are updated in place, afterward the coefficient vector will be the
-# identity matrix and the result vector will contain each coefficient's value
+# identity matrix and the result vector will contain each coefficient's value.
+# Note that for this to succeed, a selected pivot cannot be zero. Since pivots
+# are selected along the main diagonal, the first element of the coeffs array
+# cannot be 0. Similarly a pair of coefficient rows with a common factor (e.g.,
+# 2x + 2y and 3x + 3y) will eventually cause the process to fail. It is up to
+# the caller to avoid this (potentially by reorganizing rows/etc.).
 #
 # @param [in,out] coeffs Coefficient vector indexed [1,1]-[n,n]
 # @param [in,out] rhs Results vector indexed [1]-[n]
 # @param n number of coeffients (optional, auto-detected in not specified)
+#
+# @return 1 if successful, 0 if a normalization would result in a divide by 0
+#
+# @details
+#
+# Gaussian elimination uses the following process:
+# - Move along the main diagonal, selecting each element in turn as the pivot
+# - Normalize: divide the pivot row (including rhs) by the pivot value
+# - Sweep: For each other row, multiply the pivot row (including rhs) by the
+#   the value in the pivot column of the target row and subtract the result
+#   from the target row (including rhs).
+# - If this process does not fail (e.g., due to a divide by 0), in the end
+#   coeffs should become the identity matrix (i.e., 1 along main diagonal,
+#   0 elsewhere). At this point the rhs contains the final result vector.
+#
+# For example, given the set of equations and equivalent matrices:
+#
+# |  equations  | coeffs | rhs |
+# | ----------- | ------ | --- |
+# |  x + y = 5  |  1  1  |  5  |
+# | 2x - y = 7  |  2 -1  |  7  |
+#
+# The first pivot value is 1, so normalization simply divides row 1 by 1,
+# which changes nothing.
+#
+# The first sweep subtacts 2 times row 1 ([2 2 | 10]) from row 2, yielding:
+#
+# |  equations  | coeffs | rhs |
+# | ----------- | ------ | --- |
+# |  x + y = 5  |  1  1  |  5  |
+# |    -3y = -3 |  0 -3  | -3  |
+#
+# The second and final pivot value is -3, so normalization divides row 2 by
+# -3, yielding:
+#
+# |  equations  | coeffs | rhs |
+# | ----------- | ------ | --- |
+# |  x + y = 5  |  1  1  |  5  |
+# |      y = 1  |  0  1  |  1  |
+#
+# Sweeping subtracts 1 times row 2 ([0 1 | 1]) from row 1, yielding the
+# final result:
+#
+# |  equations  | coeffs | rhs |
+# | ----------- | ------ | --- |
+# |  x     = 4  |  1  0  |  4  |
+# |      y = 1  |  0  1  |  1  |
 #
 function gaussianElimination(coeffs, rhs,   n,   i, pivot, j, k, factor) {
     if (!n) {
@@ -186,6 +238,9 @@ function gaussianElimination(coeffs, rhs,   n,   i, pivot, j, k, factor) {
     for (i = 1; i <= n; i++) {
         # Select pivot
         pivot = coeffs[i,i]
+        if (!pivot) {
+            return 0
+        }
         # Normalize row i
         for (j = 1; j <= n; j++) {
             coeffs[i,j] = coeffs[i,j] / pivot
@@ -202,4 +257,5 @@ function gaussianElimination(coeffs, rhs,   n,   i, pivot, j, k, factor) {
             }
         }
     }
+    return 1
 }
