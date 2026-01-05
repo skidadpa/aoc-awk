@@ -1,0 +1,110 @@
+70 elves at start
+next_first_taker offset 36 elf 36
+1 taking from 36
+2 taking from 37
+3 taking from 39
+4 taking from 40
+5 taking from 42
+6 taking from 43
+7 taking from 45
+8 taking from 46
+9 taking from 48
+10 taking from 49
+11 taking from 51
+12 taking from 52
+13 taking from 54
+14 taking from 55
+15 taking from 57
+16 taking from 58
+17 taking from 60
+18 taking from 61
+19 taking from 63
+20 taking from 64
+21 taking from 66
+22 taking from 67
+23 taking from 69
+24 taking from 70
+25 taking from 2
+next_first_taker adjusted to offset 35
+26 taking from 3
+next_first_taker adjusted to offset 34
+27 taking from 5
+next_first_taker adjusted to offset 33
+28 taking from 6
+next_first_taker adjusted to offset 32
+29 taking from 8
+next_first_taker adjusted to offset 31
+30 taking from 9
+next_first_taker adjusted to offset 30
+31 taking from 11
+next_first_taker adjusted to offset 29
+32 taking from 12
+next_first_taker adjusted to offset 28
+33 taking from 14
+next_first_taker adjusted to offset 27
+34 taking from 15
+next_first_taker adjusted to offset 26
+35 taking from 17
+next_first_taker adjusted to offset 25
+35 elves left, new taker is 38
+ 1 4 7 10 13 16 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 38 41 44 47 50 53 56 59 62 65 68
+next_first_taker offset 7 elf 18
+38 taking from 18
+41 taking from 20
+44 taking from 21
+47 taking from 23
+50 taking from 24
+53 taking from 26
+56 taking from 27
+59 taking from 29
+62 taking from 30
+65 taking from 32
+68 taking from 33
+1 taking from 35
+4 taking from 38
+7 taking from 44
+10 taking from 47
+13 taking from 53
+16 taking from 56
+18 elves left, new taker is 19
+ 1 4 7 10 13 16 19 22 25 28 31 34 41 50 59 62 65 68
+next_first_taker offset 16 elf 62
+19 taking from 62
+22 taking from 65
+25 taking from 1
+next_first_taker adjusted to offset 15
+28 taking from 4
+next_first_taker adjusted to offset 14
+31 taking from 10
+next_first_taker adjusted to offset 13
+34 taking from 13
+next_first_taker adjusted to offset 12
+41 taking from 19
+next_first_taker adjusted to offset 11
+50 taking from 22
+next_first_taker adjusted to offset 10
+59 taking from 28
+9 elves left, new taker is 7
+ 7 16 25 31 34 41 50 59 68
+next_first_taker offset 5 elf 34
+7 taking from 34
+16 taking from 50
+25 taking from 59
+31 taking from 7
+next_first_taker adjusted to offset 4
+5 elves left, new taker is 41
+ 16 25 31 41 68
+next_first_taker offset 1 elf 16
+41 taking from 16
+68 taking from 31
+3 elves left, new taker is 25
+ 25 41 68
+next_first_taker offset 2 elf 41
+25 taking from 41
+2 elves left, new taker is 68
+ 25 68
+next_first_taker offset 1 elf 25
+68 taking from 25
+1 elves left, new taker is 68
+ 68
+68
