@@ -2,10 +2,17 @@
 @include "../../lib/aoc.awk"
 BEGIN {
     FPAT = "([1-4])|([MG][a-z][a-z])"
-    ELEVATOR = 1
-    ITEM_STARTS["EEE"] = "1"
-    BACKWARD_LIMIT = 25
-    FORWARD_LIMIT = 50
+    PROCINFO["sorted_in"] = "@ind_str_asc"
+    STEP_LIMIT = 50
+    DEBUG = 0
+    UP = "^"
+    DOWN = "v"
+    DIRECTIONS[UP] = 1
+    DIRECTIONS[DOWN] = -1
+    FWD = 0
+    BWD = 1
+    STR[FWD] = "FWD"
+    STR[BWD] = "BWD"
 }
 $0 ~! /^The ((first)|(second)|(third)|(fourth)) floor contains [-a-z]+\.$/ {
     aoc::data_error()
@@ -20,205 +27,250 @@ $0 ~! /^The ((first)|(second)|(third)|(fourth)) floor contains [-a-z]+\.$/ {
 }
 {
     for (i = 2; i <= NF; ++i) {
-        ITEM_STARTS[$i] = $1
+        LEVELS[$1][$i] = 1
+        STARTS[$i] = $1
         switch (substr($i,1,1)) {
         case "M":
-            CHIP_NAMES[$i] = "G" substr($i,2)
+            PAIR[$i] = "G" substr($i,2)
             break
         case "G":
-            ISOTOPE_NAMES[$i] = "M" substr($i,2)
+            PAIR[$i] = "M" substr($i,2)
             break
         default:
             aoc::data_error($i)
         }
     }
 }
-function reverse(path,   PATH, n, i) {
-    n = split(path, PATH)
-    path = PATH[n]
-    for (i = n - 1; i >= 1; --i) {
-        path = path " " PATH[i]
+function encode(elevator, lvls,   code, sep, lvl, type) {
+    code = ""
+    sep = ""
+    for (lvl = 1; lvl <= 4; ++lvl) {
+        code = code sep
+        sep = ""
+        if (elevator == lvl) {
+            code = code "E"
+            sep = ","
+        }
+        for (type in lvls[lvl]) if (lvls[lvl][type] > 0) {
+            code = code sep lvls[lvl][type] type
+            sep = ","
+        }
+        sep = ";"
     }
-    return path
+    return code
 }
-function dump(code,   LEVELS, l, i) {
-    for (l = 4; l >= 1; --l) {
-        printf("%d", l) > DFILE
-        for (i in ITEMS) {
-            if (level(code, i) == l) {
-                printf(" %s", ITEMS[i]) > DFILE
+function decode(code, lvls,   elevator, floors, lvl, count, items, type) {
+    elevator = -1
+    split(code, floors, ";")
+    for (lvl = 1; lvl <= 4; ++lvl) {
+        split("", lvls[lvl])
+        count = split(floors[lvl], items, ",")
+        for (type = 1; type <= count; ++type) {
+            if (items[type] == "E") {
+                elevator = lvl
             } else {
-                printf(" ...") > DFILE
-            }
-        }
-        printf("\n") > DFILE
-    }
-}
-function legal(code,   g, c, l, m) {
-    for (g in ISOTOPES) {
-        c = ISOTOPES[g]
-        l = level(code, g)
-        for (m in CHIPS) {
-            if ((m != c) && (l == level(code, m)) && (l != level(code, CHIPS[m]))) {
-                return 0
+                lvls[lvl][substr(items[type],2,2)] = substr(items[type],1,1)
             }
         }
     }
-    return 1
+    return elevator
 }
-function apply_moves(s, to, i1, i2,   e, i) {
-    e = to
-    for (i = 2; i <= length(s); ++i) {
-        if ((i == i1) || (i == i2)) {
-            e = e to
-        } else {
-            e = e substr(s,i,1)
+function dump(elevator, lvls,   lvl, type) {
+    for (lvl in lvls) {
+        printf "%d%s:", lvl, (elevator == lvl) ? "E" : " " > DFILE
+        for (type in lvls[lvl]) if (lvls[lvl][type] > 0) {
+            printf " %dx%s", lvls[lvl][type], type > DFILE
+        }
+        printf "\n" > DFILE
+    }
+}
+END {
+    sep = ""
+    for (lvl = 1; lvl <= 4; ++lvl) {
+        # convert from item names to type & pair location
+        split("", items)
+        for (item in LEVELS[lvl]) {
+            ++items[substr(item,1,1) STARTS[PAIR[item]]]
+        }
+        split("", LEVELS[lvl])
+        for (type in items) {
+            LEVELS[lvl][type] = items[type]
         }
     }
-    if (DEBUG > 3) {
-        print "from", s, "evaluating move to", to, "of", i1, i2, "yielding", e > DFILE
+    LEVELS[1]["G1"] += 2
+    LEVELS[1]["M1"] += 2
+    pairs = length(PAIR) / 2 + 2
+    target_code = ";;;E," pairs "G4," pairs "M4"
+    e = 1
+    start_code = encode(e, LEVELS)
+    if (DEBUG) {
+        print "START:", start_code > DFILE
+        print "TARGET:", target_code > DFILE
     }
-    return e
-}
-function level(code, i) {
-    return int(substr(code, i, 1))
-}
-function find_next_steps(LAST_STEPS, NEXT_STEPS, PATHS, TARGETS,
-                         s, nxt, lvl, dst, i1, i2, i3, i4, TO_TRY, ok, move) {
-    if (DEBUG > 2) {
-        print "calling find_next_steps with length(LAST_STEPS) =", length(LAST_STEPS) > DFILE
-    }
-    split("", NEXT_STEPS)
-    split("", TO_TRY)
-    for (s in LAST_STEPS) {
-        if (DEBUG > 2) {
-            print "searching from:", s > DFILE
-            dump(s)
-        }
-        nxt = LAST_STEPS[s] " "
-        lvl = level(s, ELEVATOR)
-        if (DEBUG > 3) {
-            print "elevator is at level", lvl > DFILE
-        }
-        for (dst = lvl + 1; dst >= lvl - 1; dst -= 2) if ((dst >= 1) && (dst <= 4)) {
-            if (DEBUG > 3) {
-                print "evaluating moves from level", lvl, "to level", dst > DFILE
-            }
-            for (i1 in CHIPS) if (level(s, i1) == lvl) {
-                for (i2 in CHIPS) if (level(s, i2) == lvl) {
-                    move = apply_moves(s, dst, i1, i2)
-                    TO_TRY[move] = nxt move
+    step = 0
+    STEPS[step][FWD][start_code] = 1
+    STEPS[step][BWD][target_code] = 1
+    DISTANCE[FWD][start_code] = 0
+    DISTANCE[BWD][target_code] = 0
+    while ((step in STEPS) && (step <= STEP_LIMIT)) {
+        for (fb = FWD; fb <= BWD; ++fb) {
+            rev = !fb
+            for (code in STEPS[step][fb]) {
+
+                e = decode(code, LEVELS)
+                SEEN[code] = 1
+                if (code in DISTANCE[rev]) {
+                    if (DEBUG) {
+                        print "hit", code, STR[fb], "at", step, "and", STR[rev], "at", DISTANCE[rev][code], "steps" > DFILE
+                    }
+                    print DISTANCE[rev][code] + step
+                    exit
                 }
-                if (level(s, CHIPS[i1]) == lvl) {
-                    move = apply_moves(s, dst, i1, CHIPS[i1])
-                    TO_TRY[move] = nxt move
+                DISTANCE[fb][code] = step
+
+                # verify validity
+                valid = 1
+                for (level in LEVELS) if (valid) {
+                    active_generator = 0
+                    unprotected_chip = 0
+                    for (item in LEVELS[level]) if (LEVELS[level][item] > 0) {
+                        if (substr(item,1,1) == "G") {
+                            active_generator = 1
+                        }
+                        if ((substr(item,1,1) == "M") && (substr(item,2,1) != level)) {
+                            unprotected_chip = 1
+                        }
+                    }
+                    if (active_generator && unprotected_chip) {
+                        valid = 0
+                    }
                 }
-            }
-            for (i1 in ISOTOPES) if (level(s,i1) == lvl) {
-                for (i2 in ISOTOPES) if (level(s,i2) == lvl) {
-                    move = apply_moves(s, dst, i1, i2)
-                    TO_TRY[move] = nxt move
+
+                if (DEBUG > 3) {
+                    print "STEP", step, STR[fb], "PROCESSING", code > DFILE
                 }
-            }
-        }
-    }
-    for (move in TO_TRY) {
-        if (DEBUG > 2) {
-            print "evaluating", move, "at", TO_TRY[move] > DFILE
-            dump(move)
-        }
-        if (move in TARGETS) {
-            return nxt reverse(TARGETS[move])
-        }
-        if (!(move in PATHS)) {
-            if (legal(move)) {
-                PATHS[move] = TO_TRY[move]
-                NEXT_STEPS[move] = PATHS[move]
-                if (DEBUG > 1) {
-                    print "adding", move, "at", PATHS[move] > DFILE
-                    if (DEBUG > 2) {
-                        dump(move)
+                if (!valid) {
+                    if (DEBUG > 3) {
+                        print code, "INVALID" > DFILE
+                    }
+                    continue
+                }
+
+                if (fb == FWD) {
+                    min_level = 1
+                    max_level = 4
+                    while ((length(LEVELS[min_level]) == 0) && (min_level < 4)) {
+                        ++min_level
+                    }
+                } else {
+                    min_level = 1
+                    max_level = 4
+                    while ((length(LEVELS[max_level]) == 0) && (max_level > 1)) {
+                        --max_level
+                    }
+                }
+
+                # add all moves that aren't in SEEN to STEPS[step + 1][fb]
+                # rules for moves:
+                # - always move one level up or down in range 1-4
+                # - must move exactly one or two items
+                # - must update matched pairs also
+                split("", candidates)
+                for (item in LEVELS[e]) if (LEVELS[e][item] > 0) {
+                    candidates[item] = 1
+                    seen_self = 0
+                    for (other in LEVELS[e]) if (LEVELS[e][other] > 0) {
+                        if (!seen_self) {
+                            if (item == other) {
+                                seen_self = 1
+                                if (LEVELS[e][item] > 1) {
+                                    candidates[item " " other] = 1
+                                }
+                            }
+                            continue
+                        }
+                        candidates[item " " other] = 1
+                    }
+                }
+                for (trying in candidates) {
+                    n = split(trying, MOVES)
+                    for (ud in DIRECTIONS) {
+                        dest = e + DIRECTIONS[ud]
+                        if ((dest < min_level) || (dest > max_level)) {
+                            continue
+                        }
+
+                        # apply move of items/elevator:
+                        # - update matching pairs
+                        # - decrement count at e
+                        # - increment count at destination
+                        # - special handling if both parts of a pair are moving
+                        if ((n > 1) && \
+                            (substr(MOVES[1],1,1) != substr(MOVES[2],1,1)) && \
+                            (substr(MOVES[1],2,1) == substr(MOVES[2],2,1))) {
+                            for (m = 1; m <= n; ++m) {
+                                mytype = substr(MOVES[m],1,1)
+                                if (--LEVELS[e][MOVES[m]] < 1) delete LEVELS[e][MOVES[m]]
+                                ++LEVELS[dest][mytype dest]
+                            }
+                        } else {
+                            for (m = 1; m <= n; ++m) {
+                                mytype = substr(MOVES[m],1,1)
+                                ptype = (mytype == "G") ? "M" : "G"
+                                ploc = substr(MOVES[m],2,1)
+                                if (--LEVELS[ploc][ptype e] < 1) delete LEVELS[ploc][ptype e]
+                                ++LEVELS[ploc][ptype dest]
+                                if (--LEVELS[e][MOVES[m]] < 1) delete LEVELS[e][MOVES[m]]
+                                ++LEVELS[dest][MOVES[m]]
+                            }
+                        }
+
+                        # add new move to next step
+                        new_code = encode(dest, LEVELS)
+                        if (new_code in DISTANCE[rev]) {
+                            if (DEBUG) {
+                                print "found", new_code, "at", STR[rev], DISTANCE[rev][new_code], "while processing", code, STR[fb], "at", step > DFILE
+                            }
+                            print DISTANCE[rev][new_code] + step + 1
+                            exit
+                        }
+                        if (!(new_code in SEEN)) {
+                            STEPS[step + 1][fb][new_code] = 1
+                        }
+
+                        # undo move of items/elevator:
+                        # - update matching pairs
+                        # - decrement count at destination
+                        # - increment count at e
+                        # - special handling if both parts of a pair are moving
+                        if ((n > 1) && \
+                            (substr(MOVES[1],1,1) != substr(MOVES[2],1,1)) && \
+                            (substr(MOVES[1],2,1) == substr(MOVES[2],2,1))) {
+                            for (m = 1; m <= n; ++m) {
+                                mytype = substr(MOVES[m],1,1)
+                                if (--LEVELS[dest][mytype dest] < 1) delete LEVELS[dest][mytype dest]
+                                ++LEVELS[e][MOVES[m]]
+                            }
+                        } else {
+                            for (m = 1; m <= n; ++m) {
+                                mytype = substr(MOVES[m],1,1)
+                                ptype = (mytype == "G") ? "M" : "G"
+                                ploc = substr(MOVES[m],2,1)
+                                if (--LEVELS[ploc][ptype dest] < 1) delete LEVELS[ploc][ptype dest]
+                                ++LEVELS[ploc][ptype e]
+                                if (--LEVELS[dest][MOVES[m]] < 1) delete LEVELS[dest][MOVES[m]]
+                                ++LEVELS[e][MOVES[m]]
+                            }
+                        }
                     }
                 }
             }
         }
+        delete STEPS[step]
+        ++step
     }
-    if (DEBUG > 2) {
-        print "find_next_steps returns", length(NEXT_STEPS), "next steps" > DFILE
+    if (step > STEP_LIMIT) {
+        aoc::compute_error("No solution found in " STEP_LIMIT " steps")
     }
-    return ""
-}
-END {
-    asorti(ITEM_STARTS, ITEMS, "@ind_str_asc")
-    start = ""
-    for (i in ITEMS) {
-        start = start ITEM_STARTS[ITEMS[i]]
-        ITEM_NUMBERS[ITEMS[i]] = i
-    }
-    for (i in CHIP_NAMES) {
-        CHIPS[ITEM_NUMBERS[i]] = ITEM_NUMBERS[CHIP_NAMES[i]]
-    }
-    for (i in ISOTOPE_NAMES) {
-        ISOTOPES[ITEM_NUMBERS[i]] = ITEM_NUMBERS[ISOTOPE_NAMES[i]]
-    }
-    start = start "1111"
-    next_item = length(ITEMS)
-    ITEMS[++next_item] = "Gdi"
-    ITEM_NUMBER["Gdi"] = next_item
-    ISOTOPES[next_item] = next_item + 2
-    ITEMS[++next_item] = "Gel"
-    ITEM_NUMBER["Gel"] = next_item
-    ISOTOPES[next_item] = next_item + 2
-    ITEMS[++next_item] = "Mdi"
-    ITEM_NUMBER["Mdi"] = next_item
-    CHIPS[next_item] = next_item - 2
-    ITEMS[++next_item] = "Mel"
-    ITEM_NUMBER["Mel"] = next_item
-    CHIPS[next_item] = next_item - 2
-    for (i in CHIPS) {
-        if (ISOTOPES[CHIPS[i]] != i) {
-            aoc::compute_error("computing CHIP/ISOTOPE matches")
-        }
-    }
-    for (i in ISOTOPES) {
-        if (CHIPS[ISOTOPES[i]] != i) {
-            aoc::compute_error("computing CHIP/ISOTOPE matches")
-        }
-    }
-    if (!legal(start)) {
-        dump(start)
-        aoc::compute_error("initial configuration illegal")
-    }
-    end = gensub(/./, "4", "g", start)
-    FORWARD_PATHS[start] = start
-    BACKWARD_PATHS[end] = end
-    if (DEBUG) {
-        print "searching backward from goal:", end > DFILE
-        dump(end)
-    }
-    NXT[0][end] = end
-    for (i = 0; i < BACKWARD_LIMIT; ++i) {
-        found_match = find_next_steps(NXT[i], NXT[i + 1], BACKWARD_PATHS, FORWARD_PATHS)
-        if (found_match) {
-            if (DEBUG) { print found_match > DFILE }
-            print split(found_match, FOUND_MATCH) - 1
-            exit 0
-        }
-        delete NXT[i]
-    }
-    if (DEBUG) {
-        print "searching forward from start:", start > DFILE
-        dump(start)
-    }
-    delete NXT
-    NXT[0][start] = start
-    for (i = 0; i < FORWARD_LIMIT; ++i) {
-        found_match = find_next_steps(NXT[i], NXT[i + 1], FORWARD_PATHS, BACKWARD_PATHS)
-        if (found_match) {
-            if (DEBUG) { print found_match > DFILE }
-            print split(found_match, FOUND_MATCH) - 1
-            exit 0
-        }
-    }
-    aoc::compute_error("no solution after " BACKWARD_LIMIT " backward and " FORWARD_LIMIT " forward steps")
+    aoc::compute_error("Ran out of steps to try after " step " steps")
 }
