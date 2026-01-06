@@ -45,7 +45,3 @@ update: results.txt output.txt
 input.txt :
 	: DOWNLOADING TEST INPUT $@
 	aocd $(notdir $(patsubst %/,%,$(dir $(CURDIR)))) $(subst day,,$(notdir $(CURDIR))) > $@
-	./one.awk sample.txt > $@
-	./one.awk input.txt >> $@
-	./two.awk sample.txt >> $@
-	./two.awk input.txt >> $@
