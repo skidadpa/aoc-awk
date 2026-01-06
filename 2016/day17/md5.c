@@ -27,7 +27,7 @@ awk_value_t *do_md5(int nargs, awk_value_t *result, struct awk_ext_func *finfo)
 {
     unsigned char md[MD5_DIGEST_LENGTH];
     awk_value_t input;
-    char output[2 * MD5_DIGEST_LENGTH + 1];
+    char *output;
     int i;
 
     if (!get_argument(0, AWK_STRING, &input)) {
@@ -37,13 +37,14 @@ awk_value_t *do_md5(int nargs, awk_value_t *result, struct awk_ext_func *finfo)
 
     MD5((const unsigned char *)input.str_value.str, input.str_value.len, md);
 
+    ezalloc(output, char *, MD5_DIGEST_LENGTH * 2 + 1, "md5");
+    output[2 * MD5_DIGEST_LENGTH] = '\0';
     for (i = 0; i < MD5_DIGEST_LENGTH; ++i) {
         output[i * 2] = hex_digit(md[i] >> 4);
         output[i * 2 + 1] = hex_digit(md[i] & 0xf);
     }
-    output[2 * MD5_DIGEST_LENGTH] = '\0';
 
-    return make_const_string(output, MD5_DIGEST_LENGTH * 2, result);
+    return make_malloced_string(output, MD5_DIGEST_LENGTH * 2, result);
 }
 
 static awk_ext_func_t func_table[] = {
