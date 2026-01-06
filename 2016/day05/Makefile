@@ -1,6 +1,3 @@
-CFLAGS += $(shell pkg-config --cflags libcrypto) -Wno-deprecated-declarations
-LDLIBS += $(shell pkg-config --libs libcrypto)
-
 .PHONY: test clean update fullclean
 
 test : expected.txt results.txt reference.txt output.txt
@@ -13,11 +10,9 @@ reference.txt : | input.txt
 	./two.awk input.txt >> $@
 
 PROGRAMS = one.awk two.awk
-LIBRARIES = md5.so
 SAMPLES = sample.txt
 
-md5.so : ../../lib/src/md5.c
-	$(CC) -o md5.so -shared $(CFLAGS) $< $(LDLIBS)
+include ../../lib/src/md5.mk
 
 results.txt : $(PROGRAMS) $(LIBRARIES) $(SAMPLES) Makefile
 	: GENERATING SAMPLE RESULTS $@
