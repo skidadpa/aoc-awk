@@ -1,6 +1,5 @@
 TODO
 ====
-- Import aoc21-awk
 - Import aoc17-awk
 - Complete aoc17-awk
 - Optimize 2021 solutions for day 19
