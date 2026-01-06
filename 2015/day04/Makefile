@@ -16,8 +16,8 @@ PROGRAMS = one.awk two.awk
 SAMPLES = sample.txt
 LIBRARIES = md5.so
 
-md5.so : md5.c
-	$(CC) -o md5.so -shared $(CFLAGS) md5.c $(LDLIBS)
+md5.so : ../../lib/src/md5.c
+	$(CC) -o md5.so -shared $(CFLAGS) $< $(LDLIBS)
 
 results.txt : $(PROGRAMS) $(LIBRARIES) $(SAMPLES) Makefile
 	: GENERATING SAMPLE RESULTS $@
