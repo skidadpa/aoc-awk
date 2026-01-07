@@ -2,7 +2,7 @@
 @include "../../lib/aoc.awk"
 BEGIN {
     FPAT = "[[:digit:]]+"
-    DELAY_LIMIT = 500000
+    DELAY_LIMIT = 5000000
 }
 $0 !~ /^[[:digit:]]+: [[:digit:]]+$/ {
     aoc::data_error()
