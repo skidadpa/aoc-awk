@@ -1,5 +1,80 @@
 #!/usr/bin/env gawk -f
 @include "../../lib/aoc.awk"
+@load "./day23"
+function tab(indent,   rslt) {
+    rslt = ""
+    while (indent--) {
+        rslt = rlst "    "
+    }
+    return rslt
+}
+function analyze_code(b) {
+    if (b in ANALYZED) {
+        ++LOOP_START[b]
+        return
+    }
+    ANALYZED[b] = 1
+    # while (!(b in BLOCK_CODE) && (b in WALK) && !(b in BRANCH)) {
+    #     b = WALK[b]
+    # }
+    if ((b in WALK) && (b in BRANCH)) {
+        if (       (WALK[b] in WALK) && !(WALK[b] in BRANCH) && \
+                   (BRANCH[b] in WALK) && !(BRANCH[b] in BRANCH) && \
+                   (WALK[WALK[b]] == WALK[BRANCH[b]])) {
+            # simple two-sided conditional, don't look for loops
+            analyze_code(WALK[b])
+        } else if ((WALK[b] in WALK) && !(WALK[b] in BRANCH) && \
+                   (WALK[WALK[b]] == BRANCH[b]])) {
+            # simple one-sided conditional, don't look for loops
+            analyze_code(BRANCH[b])
+        } else if ((BRANCH[b] in WALK) && !(BRANCH[b] in BRANCH) && \
+                   (WALK[BRANCH[b]] == WALK[b]])) {
+            # simple one-sided conditional, don't look for loops
+            analyze_code(WALK[b])
+        } else {
+            analyze_code(BRANCH[b])
+            analyze_code(WALK[b])
+        }
+    } else if (b in WALK) {
+        analyze_code(WALK[b])
+    } else if (b in BRANCH) {
+        analyze_code(BRANCH[b])
+    } else if (b != "END") {
+        aoc::compute_error("non-END terminal state " b)
+    }
+}
+function generate_code(indent, b,   lines, i) {
+    GENERATED[block] = 1
+    if (b in LOOP_START) {
+        for (i = 1; i <= LOOP_START[b]; ++i) {
+            print tab(indent) "do {"
+            ++indent
+        }
+    }
+    print tab(indent) "/*"
+    split(BASIC_BLOCKS[b], lines, "\\n")
+    for (i in lines) {
+        print tab(indent) " * " lines[i]
+    }
+    print tab(indent) " */"
+    if (b in BLOCK_CODE) {
+        split(BLOCK_CODE, lines, "\\n")
+        for (i in lines) {
+            print tab(indent) lines[i]
+        }
+    }
+    if (b in BRANCH) {
+        if (BRANCH[b] in GENERATED) {
+            if (!(b in LOOP_START)) {
+                aoc::compute_error(b " BRANCH dest is not a LOOP START")
+            }
+            --indent
+            print tab(indent) "} while (" BRANCH_TEST[b] ");"
+        } else {
+        LOOP_START[b]
+        WALK[b]
+        BRANCH[b]
+        BRANCH_TEST[b]
 BEGIN {
     split("abcdefgh", temp, "")
     for (t in temp) {
@@ -45,6 +120,7 @@ END {
             target = m + VALUE[m]
             if (target in OP) {
                 JUMP_DEST[m] = target
+                JUMP_TEST[m] = DEST[m]
                 BASIC_BLOCKS[target] = "NEW"
                 if (DEBUG && DEBUG != "graphviz") {
                     print "creating BASIC_BLOCK at", target > DFILE
@@ -57,9 +133,10 @@ END {
                 }
             } else {
                 JUMP_DEST[m] = "END"
+                JUMP_TEST[m] = DEST[m]
             }
             if (DEBUG && DEBUG != "graphviz") {
-                print "JUMP dest is", JUMP_DEST[m] > DFILE
+                print "JUMP dest is", JUMP_DEST[m], "test is", JUMP_TEST[m] > DFILE
             }
             if (DEST[m] in REGS) {
                 target = m + 1
@@ -73,8 +150,40 @@ END {
                         print "creating BASIC_BLOCK at", target > DFILE
                     }
                 } else {
+                    if (DEBUG && DEBUG != "graphviz") {
+                        print "creating WALK from", m, "to END" > DFILE
+                    }
                     FALLTHROUGH_DEST[m] = "END"
                 }
+            } else {
+                # convert JUMP to FALLTHROUGH
+                if (DEST[m]) {
+                    # always taken
+                    if (DEBUG && DEBUG != "graphviz") {
+                        print "converting JUMP to WALK from", m > DFILE
+                    }
+                    FALLTHROUGH_DEST[m] = JUMP_DEST[m]
+                } else {
+                    # never taken, useless code but make a block anyway
+                    target = m + 1
+                    if (target in OP) {
+                        FALLTHROUGH_DEST[m] = target
+                        if (DEBUG && DEBUG != "graphviz") {
+                            print "creating WALK from", m, "to", target > DFILE
+                        }
+                        BASIC_BLOCKS[target] = "NEW"
+                        if (DEBUG && DEBUG != "graphviz") {
+                            print "creating BASIC_BLOCK at", target > DFILE
+                        }
+                    } else {
+                        if (DEBUG && DEBUG != "graphviz") {
+                            print "creating WALK from", m, "to END" > DFILE
+                        }
+                        FALLTHROUGH_DEST[m] = "END"
+                    }
+                }
+                delete JUMP_DEST[m]
+                delete JUMP_TEST[m]
             }
         }
     }
@@ -100,6 +209,7 @@ END {
                 aoc::compute_error("duplicate branch from " b " at " m)
             }
             BRANCH[b] = JUMP_DEST[m]
+            BRANCH_TEST[b] = JUMP_TEST[m]
             if (!(BRANCH[b] in BASIC_BLOCKS)) {
                 aoc::compute_error("branch to illegal " BRANCH[b] " at " m)
             }
@@ -144,6 +254,8 @@ END {
     print ""
     print "void run_program() {"
 
+    analyze_code(WALK["START"])
+    generate_code(1, WALK["START"])
 
     print "}"
     print ""
