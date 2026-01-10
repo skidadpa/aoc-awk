@@ -11,14 +11,19 @@ reference.txt : | input.txt
 
 PROGRAMS = one.awk two.awk
 SAMPLES = sample.txt
+LIBRARIES = day23.so
+
+# CFLAGS += -Wno-deprecated-declarations
+
+day23.so : day23.c Makefile
+	$(CC) -o day23.so -shared $(CFLAGS) $< $(LDLIBS)
 
 results.txt : $(PROGRAMS) $(SAMPLES) Makefile
 	: GENERATING SAMPLE RESULTS $@
 	./one.awk sample.txt > $@
-	./two.awk sample.txt >> $@
 	cat $@
 
-output.txt : $(PROGRAMS) input.txt Makefile
+output.txt : $(PROGRAMS) $(LIBRARIES) input.txt Makefile
 	: GENERATING TEST RESULTS $@
 	./one.awk input.txt > $@
 	./two.awk input.txt >> $@
@@ -28,7 +33,7 @@ clean:
 	$(RM) results.txt output.txt
 
 fullclean: clean
-	$(RM) input.txt reference.txt
+	$(RM) input.txt reference.txt $(LIBRARIES)
 
 update: results.txt output.txt
 	: UPDATING REFERENCE FILES
