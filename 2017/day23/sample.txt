@@ -1,0 +1,4 @@
+sub a -10
+mul b 2
+sub a 1
+jnz a -2

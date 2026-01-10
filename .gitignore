@@ -4,3 +4,4 @@ results.txt
 reference.txt
 .*.sw?
 *.so
+_*
