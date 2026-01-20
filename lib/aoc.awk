@@ -88,6 +88,36 @@ function abs(x) {
 }
 
 ##
+# @brief Compute manhattan distance between two points in 2D
+#
+# @param x1 First point x coordinate
+# @param y1 First point y coordinate
+# @param x2 Second point x coordinate
+# @param y2 Second point y coordinate
+#
+# @return Sum of the differences of X and Y coordinates
+#
+function manhattan2(x1, y1, x2, y2) {
+    return abs(x2 - x1) + abs(y2 - y1)
+}
+
+##
+# @brief Compute manhattan distance between two points in 3D
+#
+# @param x1 First point x coordinate
+# @param y1 First point y coordinate
+# @param z1 First point z coordinate
+# @param x2 Second point x coordinate
+# @param y2 Second point y coordinate
+# @param z2 Second point z coordinate
+#
+# @return Sum of the differences of X and Y coordinates
+#
+function manhattan3(x1, y1, z1, x2, y2, z2) {
+    return abs(x2 - x1) + abs(y2 - y1) + abs(z2 - z1)
+}
+
+##
 # @brief Find the smallest of two numbers.
 #
 # @param a Number to process
