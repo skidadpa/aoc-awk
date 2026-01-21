@@ -10,10 +10,10 @@ function sinfo(s) {
     return s "[" SX[s] "," SY[s] "," SZ[s] "](" SO[s] ")"
 }
 function dist(b1, b2) {
-    return aoc::manhattan3(X[b1], Y[b1], Z[b1], X[b2], Y[b2], Z[b2])
+    return aoc::manhattan(X[b1], X[b2], Y[b1], Y[b2], Z[b1], Z[b2])
 }
 function sdist(b1, b2) {
-    return aoc::manhattan3(SX[b1], SY[b1], SZ[b1], SX[b2], SY[b2], SZ[b2])
+    return aoc::manhattan(SX[b1], SX[b2], SY[b1], SY[b2], SZ[b1], SZ[b2])
 }
 function unmap(map, coord, b) {
     switch (index(map, coord)) {

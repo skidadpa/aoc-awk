@@ -88,33 +88,41 @@ function abs(x) {
 }
 
 ##
-# @brief Compute manhattan distance between two points in 2D
+# @brief Compute manhattan distance between two points in varying dimensions.
 #
-# @param x1 First point x coordinate
-# @param y1 First point y coordinate
-# @param x2 Second point x coordinate
-# @param y2 Second point y coordinate
+# Either provide the coordinates of each dimension in sequence (i.e., x1, x2, y1, y2, etc.)
+# for up to 6 dimensions OR provide two points with an arbitrary number of dimensions,
+# separated by SUBSEP (i.e., (x1 SUBSEP y1 SUBSEP z1 ...), (x2 SUBSEP y2 ...)).
 #
-# @return Sum of the differences of X and Y coordinates
+# @param a1 First point, first axis coordinate OR all coordinates
+# @param a2 Second point, first axis coordinate OR all coordinates
+# @param b1 First point second axis coordinate (optional)
+# @param b2 Second point second axis coordinate (optional)
+# @param c1 First point third axis coordinate (optional)
+# @param c2 Second point third axis coordinate (optional)
+# @param d1 First point fourth axis coordinate (optional)
+# @param d2 Second point fourth axis coordinate (optional)
+# @param e1 First point fifth axis coordinate (optional)
+# @param e2 Second point fifth axis coordinate (optional)
+# @param f1 First point sixth axis coordinate (optional)
+# @param f2 Second point sixth axis coordinate (optional)
 #
-function manhattan2(x1, y1, x2, y2) {
-    return abs(x2 - x1) + abs(y2 - y1)
-}
-
-##
-# @brief Compute manhattan distance between two points in 3D
+# @return Sum of the differences of coordinates from all axes
 #
-# @param x1 First point x coordinate
-# @param y1 First point y coordinate
-# @param z1 First point z coordinate
-# @param x2 Second point x coordinate
-# @param y2 Second point y coordinate
-# @param z2 Second point z coordinate
-#
-# @return Sum of the differences of X and Y coordinates
-#
-function manhattan3(x1, y1, z1, x2, y2, z2) {
-    return abs(x2 - x1) + abs(y2 - y1) + abs(z2 - z1)
+function manhattan(a1, a2, b1, b2, c1, c2, d1, d2, e1, e2, f1, f2) {
+    if (b1 != "") {
+        return abs(a2 - a1) + abs(b2 - b1) + abs(c2 - c1) + abs(d2 - d1) + abs(e2 - e1) + abs(f2 - f1)
+    }
+    d1 = split(a1, c1, SUBSEP)
+    d2 = split(a2, c2, SUBSEP)
+    if (d1 > d2) {
+        d1 = d2
+    }
+    e1 = 0
+    for (f1 = 1; f1 <= d1; ++f1) {
+        e1 += abs(c2[f1] - c1[f1])
+    }
+    return e1
 }
 
 ##

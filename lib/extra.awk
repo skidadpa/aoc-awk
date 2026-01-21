@@ -96,24 +96,6 @@ function set_offset(s, p) {
     return s
 }
 
-# TODO: this can be generalized for any number of dimensions
-function manhattan(a, b,    ca, cb, x, y) {
-    split(a, ca, SUBSEP)
-    split(b, cb, SUBSEP)
-    x = (ca[1] - cb[1]); if (x < 0) x = -x
-    y = (ca[2] - cb[2]); if (y < 0) y = -y
-    return x + y
-}
-
-function manhattan3(a, b,    ca, cb, x, y, z) {
-    split(a, ca, SUBSEP)
-    split(b, cb, SUBSEP)
-    x = (ca[1] - cb[1]); if (x < 0) x = -x
-    y = (ca[2] - cb[2]); if (y < 0) y = -y
-    z = (ca[3] - cb[3]); if (z < 0) z = -z
-    return x + y + z
-}
-
 function move(from, dir,    coords) {
     split(from, coords, SUBSEP)
     switch (dir) {
