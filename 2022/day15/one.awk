@@ -2,45 +2,58 @@
 @include "../../lib/aoc.awk"
 BEGIN {
     FPAT = "-?[[:digit:]]+"
-    TOP = LEFT = 99999999
-    RIGHT = BOTTOM = -99999999
+    BEACONS_ON_TARGET_ROW = 0
+    SCANNERS_ON_TARGET_ROW = 0 # doesn't really happen...
+    split("", SENSORS) # value is distance scanned
+    split("", BEACONS) # value is number of times scanned
+    split("", ROW_COVER) # indices are left edge then scanner coords, value is right edge
 }
-function abs(x) { return x < 0 ? -x : x }
-function scanned(x,y,   coord) {
-    for (s in SENSORS) {
-        split(s, coord, SUBSEP)
-        if (abs(x - coord[1]) + abs(y - coord[2]) <= SENSORS[s]) {
-            return 1
-        }
-    }
-    return 0
-}
-(NF != 4 || $0 !~ /^Sensor at x=[[:digit:]]+, y=[[:digit:]]+: closest beacon is at x=-?[[:digit:]]+, y=-?[[:digit:]]+$/) {
+$0 !~ /^Sensor at x=[[:digit:]]+, y=[[:digit:]]+: closest beacon is at x=-?[[:digit:]]+, y=-?[[:digit:]]+$/ {
     aoc::data_error()
 }
+NR == 1 {
+    TARGET_ROW = ($2 > 100) ? 2000000 : 10
+}
 {
-    d = abs($1 - $3) + abs($2 - $4)
-    if ($1 + d > RIGHT) RIGHT = $1 + d
-    if ($1 - d < LEFT) LEFT = $1 - d
-    if ($2 + d > BOTTOM) BOTTOM = $2 + d
-    if ($2 - d < TOP) TOP = $2 - d
-    if (DEBUG) printf("[%d,%d] detected [%d,%d] at distance %d\n",$1,$2,$3,$4,d) > DFILE
+    d = aoc::manhattan($1, $3, $2, $4)
     SENSORS[$1,$2] = d
+    if (($4 == TARGET_ROW) && (!(($3 SUBSEP $4) in BEACONS))) {
+        ++BEACONS_ON_TARGET_ROW
+    }
+    if ($2 == TARGET_ROW) {
+        ++SCANNERS_ON_TARGET_ROW
+    }
     ++BEACONS[$3,$4]
+    if (DEBUG > 2) {
+        printf "[%d,%d] detected [%d,%d] at distance %d\n", $1, $2, $3, $4, d > DFILE
+    }
+    extent = d - aoc::abs($2 - TARGET_ROW)
+    if (extent >= 0) {
+        if (DEBUG) {
+            printf "scanner [%d,%d] covers row from %d to %d\n", $1, $2, $1 - extent, $1 + extent > DFILE
+        }
+        ROW_COVER[$1 - extent][$1,$2] = $1 + extent
+    }
 }
 END {
-    if (DEBUG) {
-        printf("%d sensors and %d beacons in [%d,%d]-[%d,%d]\n",
-               length(SENSORS), length(BEACONS), LEFT, TOP, RIGHT, BOTTOM) > DFILE
-    }
-    row = (RIGHT > 1000) ? 2000000 : 10
-    if (DEBUG) printf("%d...", LEFT) > DFILE
-    for (x = LEFT; x <= RIGHT; ++x) {
-        if (DEBUG) if (x % 100000 == 0) printf("%d...", x) > DFILE
-        if (scanned(x, row) && !((x,row) in BEACONS)) {
-            ++count
+    PROCINFO["sorted_in"] = "@ind_num_asc"
+    rgt = -99999999
+    coverage = 0
+    for (lft in ROW_COVER) {
+        for (scanner in ROW_COVER[lft]) {
+            scanned_rgt = ROW_COVER[lft][scanner]
+            if (DEBUG) {
+                split(scanner, c, SUBSEP)
+                printf "scanner [%d,%d] covers row from %d to %d\n", c[1], c[2], lft, scanned_rgt > DFILE
+            }
+            if ((0 + lft) > rgt) {
+                coverage += scanned_rgt + 1 - lft
+                rgt = scanned_rgt
+            } else if (scanned_rgt > rgt) {
+                coverage += scanned_rgt - rgt
+                rgt = scanned_rgt
+            }
         }
     }
-    if (DEBUG) printf("%d\n", RIGHT) > DFILE
-    print count
+    print coverage - BEACONS_ON_TARGET_ROW - SCANNERS_ON_TARGET_ROW
 }

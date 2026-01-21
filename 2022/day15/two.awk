@@ -1,73 +1,144 @@
 #!/usr/bin/env gawk -f
-@include "../../lib/aoc.awk"
-
-# This searches along the edges of each scanner's range to find a spot within
-# the specified region that has not been scanned.
 #
-# Note that this still results in millions of tests, and EACH TEST results in
-# EACH scanner's coordinates being unpacked using split(), so it's still really
-# slow. Even unpacking the coordinates into x and y arrays would improve speed
-# dramatically, although there should be many other opportunities to improve the
-# algorithm (e.g., all sensors have the same diamond shape, so it should not be
-# necessary to repeat the tests for every coordinate on every edge)
+# Each scanner is surrounded by a diamond of scanned coordinates. The lines JUST OUTSIDE of the
+# diamonds are useful to find the missing beacon. Since there is only one, it will be at an
+# intersection of these lines, where two sets of nearly-adjacent diamonds overlap, for example
+# where @ appears in the following diagram:
+#
+#           ^
+#          / \
+#       ^ /   \
+#      / X     \
+#     / / \     \
+#    / <   \     \
+#   /   \   \     \
+#  <   ^ \   >     >
+#   \ / \ \ / ^   /
+#    X   \ X / \ /
+#   / \   X@X   X
+#  /   \ / X \ / \
+# <     v / \ v   \
+#  \     /   \     \
+#   \   <     >     \
+#    \   \   /       >
+#     \   \ /       /
+#      \   X       /
+#       \ / \     /
+#        v   \   /
+#             \ /
+#              v
+#
+# The lines immediately outside of each diamond:
+#
+#       \ /
+#        X
+#       /^\
+#      // \\
+#  TL //   \\ TR
+#    //     \\
+# \ //       \\ /
+#  X<         >X
+# / \\       // \
+#    \\     //
+#  BL \\   // BR
+#      \\ //
+#       \v/
+#        X
+#       / \
+#
+# can be characterized as:
+#
+# TL: y = x + bTL
+# BR: y = x + bBR
+# TR: y = -x + bTR
+# BL: y = -x + bBL
+#
+# If d is the manhattan distance from the scanner to the closest beacon, the intersections
+# immediately above and below the diamond are at coordinates [x,y+d] and [x,y-d], allowing
+# us to compute the b offsets:
+#
+# bTL = y + (d + 1) - x
+# bBR = y - (d + 1) - x
+# bTR = y + (d + 1) + x
+# bBL = y - (d + 1) + x
+#
+# We then look for two pairs, one with bTL == bBR and the other with bTR == bBL, find the
+# intersection using y = x + bTLBR = -x + bTRBL:
+#
+# x = (bTRBL - bTLBR) / 2
+# y = x + bTLBR
+#
+# And test these against the range of all scanners (we already know they are outside the
+# range of four of them, technically)
+#
+@include "../../lib/aoc.awk"
 BEGIN {
     FPAT = "-?[[:digit:]]+"
-    TOP = LEFT = 99999999
-    RIGHT = BOTTOM = -99999999
 }
-function abs(x) { return x < 0 ? -x : x }
-function scanned(x,y,   coord) {
-    for (s in SENSORS) {
-        split(s, coord, SUBSEP)
-        if (abs(x - coord[1]) + abs(y - coord[2]) <= SENSORS[s]) {
-            return 1
-        }
-    }
-    return 0
-}
-(NF != 4 || $0 !~ /^Sensor at x=[[:digit:]]+, y=[[:digit:]]+: closest beacon is at x=-?[[:digit:]]+, y=-?[[:digit:]]+$/) {
+$0 !~ /^Sensor at x=[[:digit:]]+, y=[[:digit:]]+: closest beacon is at x=-?[[:digit:]]+, y=-?[[:digit:]]+$/ {
     aoc::data_error()
 }
-{
-    d = abs($1 - $3) + abs($2 - $4)
-    if ($1 + d > RIGHT) RIGHT = $1 + d
-    if ($1 - d < LEFT) LEFT = $1 - d
-    if ($2 + d > BOTTOM) BOTTOM = $2 + d
-    if ($2 - d < TOP) TOP = $2 - d
-    if (DEBUG) printf("[%d,%d] detected [%d,%d] at distance %d\n",$1,$2,$3,$4,d) > DFILE
-    SENSORS[$1,$2] = d
-    ++BEACONS[$3,$4]
+NR == 1 {
+    UPPER_LIMIT = ($2 > 100) ? 4000000 : 20
 }
-function test(x,y) {
-    if (x >= 0 && x <= limit && y >= 0 && y <= limit && !scanned(x,y)) {
-        print x * 4000000 + y
-        exit 0
+{
+    d = aoc::manhattan($1, $3, $2, $4)
+    SENSORS[$1,$2] = d
+    B_TL[NR] = $2 + (d + 1) - $1
+    B_BR[NR] = $2 - (d + 1) - $1
+    B_TR[NR] = $2 + (d + 1) + $1
+    B_BL[NR] = $2 - (d + 1) + $1
+    if (DEBUG) {
+        printf "Scanner at [%d,%d]:\n", $1, $2 > DFILE
+        printf "TL: y = x + %d\n", B_TL[NR] > DFILE
+        printf "BR: y = x + %d\n", B_BR[NR] > DFILE
+        printf "TR: y = -x + %d\n", B_TR[NR] > DFILE
+        printf "BL: y = -x + %d\n", B_BL[NR] > DFILE
     }
 }
 END {
-    if (DEBUG) {
-        printf("%d sensors and %d beacons in [%d,%d]-[%d,%d]\n",
-               length(SENSORS), length(BEACONS), LEFT, TOP, RIGHT, BOTTOM) > DFILE
-    }
-    limit = (RIGHT > 1000) ? 4000000 : 20
-    for (s in SENSORS) {
-        split(s, coord, SUBSEP)
-        x = coord[1]
-        y = coord[2]
-        d = SENSORS[s]
-        if (DEBUG) printf("testing sensor [%d,%d] at distance %d\n", x, y, d+1) > DFILE
-        x1 = x - d - 1
-        x2 = x + d + 1
-        y1 = y2 = y
-        x3 = x4 = x
-        y3 = y - d - 1
-        y4 = y + d + 1
-        while (x1 <= x) {
-            test(x1++,y1++)
-            test(x2--,y2--)
-            test(x3--,y3++)
-            test(x4++,y4--)
+    for (i = 1; i <= NR; ++i) {
+        for (j = 1; j <= NR; ++j) {
+            if (B_TL[i] == B_BR[j]) {
+                B_TLBR[B_TL[i]] = 1
+            }
+            if (B_TR[i] == B_BL[j]) {
+                B_TRBL[B_TR[i]] = 1
+            }
         }
     }
-    aoc::compute_error()
+    if (DEBUG) {
+        printf "B_TLBR[%d]:", length(B_TLBR) > DFILE
+        for (b in B_TLBR) {
+            printf " %d", b > DFILE
+        }
+        printf "\n"
+        printf "B_TRBL[%d]:", length(B_TRBL) > DFILE
+        for (b in B_TRBL) {
+            printf " %d", b > DFILE
+        }
+        printf "\n"
+    }
+    for (bTLBR in B_TLBR) {
+        for (bTRBL in B_TRBL) {
+            x = (bTRBL - bTLBR) / 2
+            y = x + bTLBR
+            if ((x < 0) || (y < 0) || (x > UPPER_LIMIT) || (y > UPPER_LIMIT)) {
+                continue
+            }
+            coords = x SUBSEP y
+            found = 1
+            for (s in SENSORS) {
+                if (aoc::manhattan(coords, s) <= SENSORS[s]) {
+                    found = 0
+                    break
+                }
+            }
+            if (found) {
+                print x * 4000000 + y
+                exit
+            }
+        }
+    }
+    aoc::compute_error("did not find a viable location")
 }
