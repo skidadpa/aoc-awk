@@ -18,7 +18,6 @@ BEGIN {
         REGS[temp[t]] = 0
     }
     REGS["a"] = 1
-    DEBUG = "graphviz"
 }
 /^((set)|(sub)|(mul)|(jnz)) (([a-h])|(-?[[:digit:]]+)) (([a-h])|(-?[[:digit:]]+))$/ {
     if (NR == 1) {
