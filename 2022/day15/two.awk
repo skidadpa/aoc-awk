@@ -54,8 +54,8 @@
 # BL: y = -x + bBL
 #
 # If d is the manhattan distance from the scanner to the closest beacon, the intersections
-# immediately above and below the diamond are at coordinates [x,y+d] and [x,y-d], allowing
-# us to compute the b offsets:
+# immediately above and below the diamond are at coordinates [x,y+(d+1)] and [x,y-(d+1)],
+# allowing us to compute the b offsets:
 #
 # bTL = y + (d + 1) - x
 # bBR = y - (d + 1) - x
