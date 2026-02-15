@@ -187,6 +187,10 @@ END {
         descend(coords, SPREAD_BOTH)
     }
     if (DEBUG) {
+        for (coords in RUNNING_WATER) {
+            SAND[coords] = 1
+        }
+        split("", RUNNING_WATER)
         dump()
     }
     print length(STANDING_WATER)

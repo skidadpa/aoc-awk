@@ -297,3 +297,43 @@ function gaussianElimination(coeffs, rhs,   n,   i, pivot, j, k, factor) {
     }
     return 1
 }
+
+##
+# @brief Move text cursor to home (top left) position
+#
+# @param device Output device (optional)
+#
+# The first time, uses "tput" the first time run to get HOME character sequence,
+# and emits that sequence to reset the cursor.
+#
+function home_cursor(device) {
+    if (TERMINFO_HOME == "") {
+        "tput home" | getline TERMINFO_HOME
+        close("tput home")
+    }
+    if (device != "") {
+        printf "%s", TERMINFO_HOME > device
+    } else {
+        printf "%s", TERMINFO_HOME
+    }
+}
+
+##
+# @brief Clear screen.
+#
+# @param device Output device (optional)
+#
+# The first time, uses "tput" the first time run to get CLEAR character sequence,
+# and emits that sequence to clear the screen.
+#
+function clear_screen(device) {
+    if (TERMINFO_CLEAR == "") {
+        "tput clear" | getline TERMINFO_CLEAR
+        close("tput clear")
+    }
+    if (device != "") {
+        printf "%s", TERMINFO_CLEAR > device
+    } else {
+        printf "%s", TERMINFO_CLEAR
+    }
+}
