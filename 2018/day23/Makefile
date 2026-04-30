@@ -15,8 +15,6 @@ SAMPLES = sample.txt sample2.txt
 results.txt : $(PROGRAMS) $(SAMPLES) Makefile
 	: GENERATING SAMPLE RESULTS $@
 	./one.awk sample.txt > $@
-	./one.awk sample2.txt >> $@
-	./two.awk sample.txt >> $@
 	./two.awk sample2.txt >> $@
 	cat $@
 
