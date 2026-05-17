@@ -337,3 +337,34 @@ function clear_screen(device) {
         printf "%s", TERMINFO_CLEAR
     }
 }
+
+##
+# @brief Greatest common divisor
+#
+# @param a
+# @param b
+# @return GCD of a and b
+#
+# Use Euclid's algorithm to find the greatest common divisor of two numbers
+#
+function gcd(a, b,   tmp) {
+    while (b) {
+        tmp = b
+        b = a % b
+        a = tmp
+    }
+    return a
+}
+
+##
+# @brief Least Common Multiple
+#
+# @param a
+# @param b
+# @return LCM of a and b
+#
+# Use GCD method to find the least common multiple of two numbers
+#
+function lcm(a, b) {
+    return a * (b / gcd(a,b))
+}
