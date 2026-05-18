@@ -339,6 +339,26 @@ function clear_screen(device) {
 }
 
 ##
+# @brief Clear to EOL.
+#
+# @param device Output device (optional)
+#
+# The first time, uses "tput" the first time run to get EL character sequence,
+# and emits that sequence to erase to the end of line.
+#
+function clear_eol(device) {
+    if (TERMINFO_EL == "") {
+        "tput el" | getline TERMINFO_EL
+        close("tput el")
+    }
+    if (device != "") {
+        printf "%s", TERMINFO_EL > device
+    } else {
+        printf "%s", TERMINFO_EL
+    }
+}
+
+##
 # @brief Greatest common divisor
 #
 # @param a

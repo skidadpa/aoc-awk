@@ -2,6 +2,7 @@ input.txt
 output.txt
 results.txt
 reference.txt
+.sw?
 .*.sw?
 *.so
 _*
