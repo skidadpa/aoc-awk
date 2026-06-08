@@ -388,3 +388,18 @@ function gcd(a, b,   tmp) {
 function lcm(a, b) {
     return a * (b / gcd(a,b))
 }
+
+##
+# @brief Ceiling
+#
+# @param a
+# @return Ceiling of a
+#
+function ceil(a,   c) {
+    c = int(a)
+    if (a <= 0) {
+        return c
+    } else {
+        return (c == a) ? c : c + 1
+    }
+}
